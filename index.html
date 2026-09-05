@@ -1,10 +1,15 @@
-// I am exploring how to code a do a fee calcultor
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Management Fee Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6fed">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fee Calc">
 <style>
   :root {
     --bg: #f7f8fa;
@@ -186,8 +191,13 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Management Fee Calculator</h1>
-  <p class="subtitle">Tiered / breakpoint fee schedule &mdash; enter assets under management and your rate tiers below.</p>
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h1>Management Fee Calculator</h1>
+      <p class="subtitle">Tiered / breakpoint fee schedule &mdash; enter assets under management and your rate tiers below.</p>
+    </div>
+    <button id="installBtn" class="add-tier" style="display:none; white-space:nowrap;">⬇ Install App</button>
+  </div>
 
   <div class="card">
     <h2>Assets &amp; billing</h2>
@@ -387,6 +397,34 @@
 
   renderTierRows();
   calculate();
+
+  // --- PWA: register service worker + custom install button ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+
+  let deferredInstallPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.style.display = 'inline-block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    installBtn.style.display = 'none';
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+  });
 </script>
 </body>
 </html>
