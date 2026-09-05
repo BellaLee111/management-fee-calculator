@@ -200,6 +200,13 @@
   </div>
 
   <div class="card">
+    <h2>Fee model</h2>
+    <label for="modelSelect">Choose a fee schedule</label>
+    <select id="modelSelect"></select>
+    <p class="subtitle" style="margin:8px 0 0;">Picking a model loads its tiers below — you can still tweak the numbers afterward without affecting the preset itself.</p>
+  </div>
+
+  <div class="card">
     <h2>Assets &amp; billing</h2>
     <div class="row">
       <div>
@@ -268,17 +275,84 @@
 
 <script>
   // Default tiers: {upTo: number|null, rate: number}. Last tier has upTo === null (uncapped).
-  let tiers = [
-    { upTo: 1000000, rate: 1.00 },
-    { upTo: 5000000, rate: 0.75 },
-    { upTo: 10000000, rate: 0.50 },
-    { upTo: null, rate: 0.25 }
+  // --- Predefined fee models -------------------------------------------------
+  // Edit names/rates/breakpoints here, or add more entries — the dropdown and
+  // tier table are both built from this list automatically.
+  const feeModels = [
+    {
+      name: 'Model FF — 6 New',
+      tiers: [
+        { upTo: 100000, rate: 1.30 },
+        { upTo: 200000, rate: 1.20 },
+        { upTo: 300000, rate: 1.10 },
+        { upTo: null, rate: 0.85 }
+      ]
+    },
+    {
+      name: 'Model 2 — Growth',
+      tiers: [
+        { upTo: 2000000, rate: 1.25 },
+        { upTo: 10000000, rate: 0.90 },
+        { upTo: null, rate: 0.60 }
+      ]
+    },
+    {
+      name: 'Model 3 — Premium',
+      tiers: [
+        { upTo: 500000, rate: 1.50 },
+        { upTo: 2000000, rate: 1.00 },
+        { upTo: 5000000, rate: 0.75 },
+        { upTo: null, rate: 0.50 }
+      ]
+    },
+    {
+      name: 'Model 4 — Institutional',
+      tiers: [
+        { upTo: 10000000, rate: 0.75 },
+        { upTo: 25000000, rate: 0.50 },
+        { upTo: null, rate: 0.35 }
+      ]
+    },
+    {
+      name: 'Model 5 — Flat Rate',
+      tiers: [
+        { upTo: null, rate: 1.00 }
+      ]
+    },
+    {
+      name: 'Custom (start blank)',
+      tiers: [
+        { upTo: null, rate: 1.00 }
+      ]
+    }
   ];
+
+  // Deep-copy a model's tiers so editing the table never mutates the preset itself.
+  function cloneTiers(modelTiers) {
+    return modelTiers.map((t) => ({ upTo: t.upTo, rate: t.rate }));
+  }
+
+  let tiers = cloneTiers(feeModels[0].tiers);
 
   const tierBody = document.getElementById('tierBody');
   const breakdownBody = document.getElementById('breakdownBody');
   const aumInput = document.getElementById('aum');
   const freqSelect = document.getElementById('freq');
+  const modelSelect = document.getElementById('modelSelect');
+
+  feeModels.forEach((model, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = model.name;
+    modelSelect.appendChild(opt);
+  });
+
+  modelSelect.addEventListener('change', () => {
+    const model = feeModels[Number(modelSelect.value)];
+    tiers = cloneTiers(model.tiers);
+    renderTierRows();
+    calculate();
+  });
 
   function fmtMoney(n) {
     return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });

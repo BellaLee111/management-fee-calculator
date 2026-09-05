@@ -1,5 +1,5 @@
 // Service worker: caches the app shell so it installs and works offline.
-const CACHE_NAME = "fee-calc-v1";
+const CACHE_NAME = "fee-calc-v2";
 const ASSETS = [
   "./",
   "./index.html",
