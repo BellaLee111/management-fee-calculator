@@ -1,0 +1,392 @@
+// I am exploring how to code a do a fee calcultor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Management Fee Calculator</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card-bg: #ffffff;
+    --text: #1a1d23;
+    --text-muted: #5c6370;
+    --border: #e2e5ea;
+    --accent: #2f6fed;
+    --accent-soft: #eaf1fe;
+    --danger: #d9534f;
+    --row-alt: #fafbfc;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --card-bg: #1c1f26;
+      --text: #eef0f3;
+      --text-muted: #9aa1ac;
+      --border: #2b2f38;
+      --accent: #6c9bff;
+      --accent-soft: #1e2a44;
+      --danger: #ff7b72;
+      --row-alt: #20232b;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px 16px 64px;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    margin: 0 0 28px;
+    font-size: 0.95rem;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    margin: 0 0 16px;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  input[type="number"], select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  input[type="number"]:focus, select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 520px) {
+    .row { grid-template-columns: 1fr; }
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:nth-child(odd) { background: var(--row-alt); }
+  td input[type="number"] {
+    padding: 6px 8px;
+    font-size: 0.9rem;
+  }
+  .tier-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .icon-btn:hover { background: var(--accent-soft); }
+  .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .add-tier {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--accent);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .add-tier:hover { background: var(--accent-soft); }
+  .results {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 560px) {
+    .results { grid-template-columns: 1fr; }
+  }
+  .stat {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .stat .value {
+    font-size: 1.3rem;
+    font-weight: 650;
+    color: var(--accent);
+  }
+  .breakdown-title {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 4px 0 8px;
+  }
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Management Fee Calculator</h1>
+  <p class="subtitle">Tiered / breakpoint fee schedule &mdash; enter assets under management and your rate tiers below.</p>
+
+  <div class="card">
+    <h2>Assets &amp; billing</h2>
+    <div class="row">
+      <div>
+        <label for="aum">Assets under management ($)</label>
+        <input type="number" id="aum" value="7500000" min="0" step="10000">
+      </div>
+      <div>
+        <label for="freq">Billing frequency</label>
+        <select id="freq">
+          <option value="1">Annual</option>
+          <option value="4" selected>Quarterly</option>
+          <option value="12">Monthly</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Fee tiers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40%">Applies to</th>
+          <th style="width:30%">Up to ($)</th>
+          <th style="width:20%">Rate (%)</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody id="tierBody"></tbody>
+    </table>
+    <button class="add-tier" id="addTier">+ Add tier</button>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+    <div class="results">
+      <div class="stat">
+        <div class="label">Annual fee</div>
+        <div class="value" id="annualFee">$0</div>
+      </div>
+      <div class="stat">
+        <div class="label" id="periodLabel">Quarterly fee</div>
+        <div class="value" id="periodFee">$0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Effective rate</div>
+        <div class="value" id="effRate">0.00%</div>
+      </div>
+    </div>
+    <div class="breakdown-title">Breakdown by tier</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Amount in tier</th>
+          <th>Rate</th>
+          <th>Fee</th>
+        </tr>
+      </thead>
+      <tbody id="breakdownBody"></tbody>
+    </table>
+  </div>
+
+  <footer>Runs entirely in your browser &mdash; no data leaves this page.</footer>
+</div>
+
+<script>
+  // Default tiers: {upTo: number|null, rate: number}. Last tier has upTo === null (uncapped).
+  let tiers = [
+    { upTo: 1000000, rate: 1.00 },
+    { upTo: 5000000, rate: 0.75 },
+    { upTo: 10000000, rate: 0.50 },
+    { upTo: null, rate: 0.25 }
+  ];
+
+  const tierBody = document.getElementById('tierBody');
+  const breakdownBody = document.getElementById('breakdownBody');
+  const aumInput = document.getElementById('aum');
+  const freqSelect = document.getElementById('freq');
+
+  function fmtMoney(n) {
+    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  }
+
+  function renderTierRows() {
+    tierBody.innerHTML = '';
+    let prevUpTo = 0;
+    tiers.forEach((tier, i) => {
+      const tr = document.createElement('tr');
+
+      const labelTd = document.createElement('td');
+      labelTd.className = 'tier-label';
+      labelTd.textContent = i === 0
+        ? `First ${fmtMoney(tier.upTo ?? 0)}`
+        : (tier.upTo === null ? `Above ${fmtMoney(prevUpTo)}` : `Next ${fmtMoney(tier.upTo - prevUpTo)}`);
+      tr.appendChild(labelTd);
+
+      const upToTd = document.createElement('td');
+      if (tier.upTo === null) {
+        upToTd.textContent = '—';
+        upToTd.className = 'tier-label';
+      } else {
+        const upToInput = document.createElement('input');
+        upToInput.type = 'number';
+        upToInput.min = prevUpTo + 1;
+        upToInput.step = 10000;
+        upToInput.value = tier.upTo;
+        upToInput.addEventListener('input', (e) => {
+          tier.upTo = Number(e.target.value) || 0;
+          renderTierRows();
+          calculate();
+        });
+        upToTd.appendChild(upToInput);
+      }
+      tr.appendChild(upToTd);
+
+      const rateTd = document.createElement('td');
+      const rateInput = document.createElement('input');
+      rateInput.type = 'number';
+      rateInput.min = 0;
+      rateInput.step = 0.05;
+      rateInput.value = tier.rate;
+      rateInput.addEventListener('input', (e) => {
+        tier.rate = Number(e.target.value) || 0;
+        calculate();
+      });
+      rateTd.appendChild(rateInput);
+      tr.appendChild(rateTd);
+
+      const delTd = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn';
+      delBtn.textContent = '✕';
+      delBtn.title = 'Remove tier';
+      delBtn.disabled = tiers.length <= 1;
+      delBtn.addEventListener('click', () => {
+        tiers.splice(i, 1);
+        if (tiers.length) tiers[tiers.length - 1].upTo = null;
+        renderTierRows();
+        calculate();
+      });
+      delTd.appendChild(delBtn);
+      tr.appendChild(delTd);
+
+      tierBody.appendChild(tr);
+      if (tier.upTo !== null) prevUpTo = tier.upTo;
+    });
+  }
+
+  document.getElementById('addTier').addEventListener('click', () => {
+    const last = tiers[tiers.length - 1];
+    const prevUpTo = tiers.length >= 2 ? tiers[tiers.length - 2].upTo : 0;
+    const newBreak = (last.upTo ?? (prevUpTo + 1000000)) ; // shouldn't hit since last.upTo is null
+    const insertAt = (prevUpTo || 0) + 1000000;
+    tiers.splice(tiers.length - 1, 0, { upTo: insertAt, rate: last.rate });
+    renderTierRows();
+    calculate();
+  });
+
+  function calculate() {
+    const aum = Number(aumInput.value) || 0;
+    const freq = Number(freqSelect.value);
+    let prevUpTo = 0;
+    let totalFee = 0;
+    breakdownBody.innerHTML = '';
+
+    tiers.forEach((tier, i) => {
+      const cap = tier.upTo === null ? Infinity : tier.upTo;
+      const amountInTier = Math.max(0, Math.min(aum, cap) - prevUpTo);
+      const fee = amountInTier * (tier.rate / 100);
+      totalFee += fee;
+
+      const tr = document.createElement('tr');
+      const label = i === 0
+        ? `First ${fmtMoney(tier.upTo ?? 0)}`
+        : (tier.upTo === null ? `Above ${fmtMoney(prevUpTo)}` : `Next ${fmtMoney(tier.upTo - prevUpTo)}`);
+      tr.innerHTML = `<td>${label}</td><td>${fmtMoney(amountInTier)}</td><td>${tier.rate.toFixed(2)}%</td><td>${fmtMoney(fee)}</td>`;
+      breakdownBody.appendChild(tr);
+
+      if (tier.upTo !== null) prevUpTo = tier.upTo;
+    });
+
+    const effRate = aum > 0 ? (totalFee / aum) * 100 : 0;
+    const periodFee = totalFee / freq;
+    const periodNames = { '1': 'Annual fee', '4': 'Quarterly fee', '12': 'Monthly fee' };
+
+    document.getElementById('annualFee').textContent = fmtMoney(totalFee);
+    document.getElementById('periodLabel').textContent = periodNames[String(freq)];
+    document.getElementById('periodFee').textContent = fmtMoney(periodFee);
+    document.getElementById('effRate').textContent = effRate.toFixed(2) + '%';
+  }
+
+  aumInput.addEventListener('input', calculate);
+  freqSelect.addEventListener('change', calculate);
+
+  renderTierRows();
+  calculate();
+</script>
+</body>
+</html>
